@@ -16,7 +16,7 @@ type Corder struct {
 	resCount int
 	resLock  sync.Mutex
 
-	errs    map[error][]*url.URL
+	errs    map[string][]*url.URL
 	errLock sync.Mutex
 
 	startTime time.Time
@@ -26,7 +26,7 @@ func NewCorder(c *colly.Collector) *Corder {
 	corder := &Corder{
 		reqCount: 0,
 		resCount: 0,
-		errs:     make(map[error][]*url.URL),
+		errs:     make(map[string][]*url.URL),
 	}
 	c.OnRequest(func(request *colly.Request) {
 		corder.reqLock.Lock()
@@ -41,10 +41,10 @@ func NewCorder(c *colly.Collector) *Corder {
 	c.OnError(func(response *colly.Response, err error) {
 		corder.errLock.Lock()
 		defer corder.errLock.Unlock()
-		if corder.errs[err] == nil {
-			corder.errs[err] = make([]*url.URL, 0)
+		if corder.errs[err.Error()] == nil {
+			corder.errs[err.Error()] = make([]*url.URL, 0)
 		}
-		corder.errs[err] = append(corder.errs[err], response.Request.URL)
+		corder.errs[err.Error()] = append(corder.errs[err.Error()], response.Request.URL)
 	})
 	corder.startTime = time.Now()
 	return corder
@@ -70,7 +70,7 @@ func (c *Corder) ErrorCount() int {
 	return errorCount
 }
 
-func (c *Corder) Errors() map[error][]*url.URL {
+func (c *Corder) Errors() map[string][]*url.URL {
 	return c.errs
 }
 
@@ -82,7 +82,7 @@ func (c *Corder) Reset() {
 	c.errLock.Lock()
 	defer c.errLock.Unlock()
 	c.resCount, c.resCount = 0, 0
-	c.errs = make(map[error][]*url.URL)
+	c.errs = make(map[string][]*url.URL)
 	c.startTime = time.Now()
 }
 
