@@ -8,13 +8,13 @@ import (
 )
 
 type Corder struct {
-	requestCount int
-	reqLock      sync.Mutex
+	reqCount int
+	reqLock  sync.Mutex
 
-	responseCount int
-	resLock       sync.Mutex
+	resCount int
+	resLock  sync.Mutex
 
-	errors  map[error][]*url.URL
+	errs    map[error][]*url.URL
 	errLock sync.Mutex
 
 	recordTime time.Time
@@ -22,27 +22,27 @@ type Corder struct {
 
 func NewCorder(c *colly.Collector) *Corder {
 	corder := &Corder{
-		requestCount:  0,
-		responseCount: 0,
-		errors:        make(map[error][]*url.URL),
+		reqCount: 0,
+		resCount: 0,
+		errs:     make(map[error][]*url.URL),
 	}
 	c.OnRequest(func(request *colly.Request) {
 		corder.reqLock.Lock()
 		defer corder.reqLock.Unlock()
-		corder.requestCount++
+		corder.reqCount++
 	})
 	c.OnResponse(func(response *colly.Response) {
 		corder.resLock.Lock()
 		defer corder.resLock.Unlock()
-		corder.responseCount++
+		corder.resCount++
 	})
 	c.OnError(func(response *colly.Response, err error) {
 		corder.errLock.Lock()
 		defer corder.errLock.Unlock()
-		if corder.errors[err] == nil {
-			corder.errors[err] = make([]*url.URL, 0)
+		if corder.errs[err] == nil {
+			corder.errs[err] = make([]*url.URL, 0)
 		}
-		corder.errors[err] = append(corder.errors[err], response.Request.URL)
+		corder.errs[err] = append(corder.errs[err], response.Request.URL)
 	})
 	corder.recordTime = time.Now()
 	return corder
@@ -53,23 +53,23 @@ func (c *Corder) RecordTime() time.Time {
 }
 
 func (c *Corder) RequestCount() int {
-	return c.requestCount
+	return c.reqCount
 }
 
 func (c *Corder) ResponseCount() int {
-	return c.responseCount
+	return c.resCount
 }
 
 func (c *Corder) ErrorCount() int {
 	errorCount := 0
-	for _, urls := range c.errors {
+	for _, urls := range c.errs {
 		errorCount += len(urls)
 	}
 	return errorCount
 }
 
 func (c *Corder) Errors() map[error][]*url.URL {
-	return c.errors
+	return c.errs
 }
 
 func (c *Corder) Reset() {
@@ -79,7 +79,7 @@ func (c *Corder) Reset() {
 	defer c.resLock.Unlock()
 	c.errLock.Lock()
 	defer c.errLock.Unlock()
-	c.responseCount, c.responseCount = 0, 0
-	c.errors = make(map[error][]*url.URL)
+	c.resCount, c.resCount = 0, 0
+	c.errs = make(map[error][]*url.URL)
 	c.recordTime = time.Now()
 }
