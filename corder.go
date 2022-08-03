@@ -19,7 +19,7 @@ type Corder struct {
 	errs    map[error][]*url.URL
 	errLock sync.Mutex
 
-	recordTime time.Time
+	startTime time.Time
 }
 
 func NewCorder(c *colly.Collector) *Corder {
@@ -46,12 +46,12 @@ func NewCorder(c *colly.Collector) *Corder {
 		}
 		corder.errs[err] = append(corder.errs[err], response.Request.URL)
 	})
-	corder.recordTime = time.Now()
+	corder.startTime = time.Now()
 	return corder
 }
 
-func (c *Corder) RecordTime() time.Time {
-	return c.recordTime
+func (c *Corder) StartTime() time.Time {
+	return c.startTime
 }
 
 func (c *Corder) RequestCount() int {
@@ -83,12 +83,12 @@ func (c *Corder) Reset() {
 	defer c.errLock.Unlock()
 	c.resCount, c.resCount = 0, 0
 	c.errs = make(map[error][]*url.URL)
-	c.recordTime = time.Now()
+	c.startTime = time.Now()
 }
 
 func (c *Corder) Print(writer io.Writer) {
 	writer.Write([]byte("--------- Colly Corder ---------\n"))
-	writer.Write([]byte(fmt.Sprintf("          cost: %v\n", time.Now().Sub(c.RecordTime()))))
+	writer.Write([]byte(fmt.Sprintf("          cost: %v\n", time.Now().Sub(c.StartTime()))))
 	writer.Write([]byte(fmt.Sprintf(" request count: %d\n", c.RequestCount())))
 	writer.Write([]byte(fmt.Sprintf("response count: %d\n", c.ResponseCount())))
 	writer.Write([]byte(fmt.Sprintf("   error count: %d\n", c.ErrorCount())))
