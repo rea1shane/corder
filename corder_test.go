@@ -3,8 +3,8 @@ package corder
 import (
 	"fmt"
 	"github.com/gocolly/colly/v2"
+	"os"
 	"testing"
-	"time"
 )
 
 func TestNewCorder(t *testing.T) {
@@ -34,9 +34,5 @@ func TestNewCorder(t *testing.T) {
 
 	c.Visit("http://www.baidu.com/")
 
-	fmt.Println(" request count:", corder.RequestCount())
-	fmt.Println("response count:", corder.ResponseCount())
-	fmt.Println("   error count:", corder.ErrorCount())
-	fmt.Println("          cost:", time.Now().Sub(corder.RecordTime()))
-	fmt.Println(corder.Errors())
+	corder.Print(os.Stdout)
 }

@@ -1,7 +1,9 @@
 package corder
 
 import (
+	"fmt"
 	"github.com/gocolly/colly/v2"
+	"io"
 	"net/url"
 	"sync"
 	"time"
@@ -82,4 +84,22 @@ func (c *Corder) Reset() {
 	c.resCount, c.resCount = 0, 0
 	c.errs = make(map[error][]*url.URL)
 	c.recordTime = time.Now()
+}
+
+func (c *Corder) Print(writer io.Writer) {
+	writer.Write([]byte("--------- Colly Corder ---------\n"))
+	writer.Write([]byte(fmt.Sprintf("          cost: %v\n", time.Now().Sub(c.RecordTime()))))
+	writer.Write([]byte(fmt.Sprintf(" request count: %d\n", c.RequestCount())))
+	writer.Write([]byte(fmt.Sprintf("response count: %d\n", c.ResponseCount())))
+	writer.Write([]byte(fmt.Sprintf("   error count: %d\n", c.ErrorCount())))
+	if c.ErrorCount() != 0 {
+		writer.Write([]byte(fmt.Sprintf("\nerror detail:\n")))
+		for err, urls := range c.Errors() {
+			writer.Write([]byte(fmt.Sprintf("> [ %v ] (count: %d)\n", err, len(urls))))
+			for _, u := range urls {
+				writer.Write([]byte(fmt.Sprintf("  - %v\n", u)))
+			}
+		}
+	}
+	writer.Write([]byte("--------------------------------\n"))
 }
